@@ -39,13 +39,24 @@ func New(debug ...bool) *Miyabi {
 func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := myb.pool.Get().(Context)
 	ctx = NewContext(&w, r)
-	method := ctx.Request.Method
-	url := ctx.Request.URL.Path
-	handler := myb.Routing.search(method, url)
+	method := ctx.Request.Base.Method
+	url := ctx.Request.Base.URL.Path
+	handler, params := myb.Routing.search(method, url)
 	if handler != nil {
 		ctx.Handler = *handler
+		ctx.Request.PathParams = params
+		ctx.Parse()
 		ctx.Handler(&ctx)
 		myb.pool.Put(ctx)
+	} else {
+		ctx.Handler = noRoute()
+		ctx.Handler(&ctx)
+	}
+}
+
+func noRoute() HandlerFunc {
+	return func(ctx *Context) {
+		ctx.Response.WriteResponse("404 Not Found.")
 	}
 }
 
