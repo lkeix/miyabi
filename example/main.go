@@ -15,6 +15,7 @@ func main() {
 	routing.GET("/foo/:user", test4)
 	routing.GET("/repo/:user/:active", test5)
 	routing.GET("/fizz/:user/:active/:bool/:okok", test6)
+	routing.GET("/tmpl", test7)
 	myb.Routing = routing
 	myb.Serve(":8000")
 }
@@ -49,4 +50,12 @@ func test5(ctx *miyabi.Context) {
 func test6(ctx *miyabi.Context) {
 	fmt.Println(ctx.Request.QueryParams["page"])
 	ctx.Response.WriteResponse(ctx.Request.PathParams)
+}
+
+func test7(ctx *miyabi.Context) {
+	ctx.AddTemplates("test", "./templates/test.tmpl", "./templates/test1.tmpl")
+	ctx.Execute("test", map[string]string{
+		"Title": "Hello!",
+		"test":  "test",
+	})
 }

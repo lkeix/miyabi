@@ -3,6 +3,8 @@ package miyabi
 import (
 	"encoding/base64"
 	"encoding/json"
+	"html/template"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -10,10 +12,12 @@ import (
 type (
 	// Context is request, writer context
 	Context struct {
-		Response *Response
-		Request  RequestContent
-		Handler  HandlerFunc
+		Response  *Response
+		Request   RequestContent
+		Handler   HandlerFunc
+		HTMLtmpls map[string][]string
 	}
+
 	// RequestContent is lapping http.Request
 	RequestContent struct {
 		Base        *http.Request
@@ -21,6 +25,9 @@ type (
 		PathParams  map[string]string
 		QueryParams map[string][]string
 	}
+
+	// Templates tmpl files map
+	Templates map[string][]string
 )
 
 // NewContext create Context instance.
@@ -29,6 +36,7 @@ func NewContext(w *http.ResponseWriter, r *http.Request) Context {
 	ctx.Response = NewResponse(w)
 	ctx.Request.Base = r
 	ctx.Request.QueryParams = make(map[string][]string)
+	ctx.HTMLtmpls = make(map[string][]string)
 	return ctx
 }
 
@@ -88,4 +96,18 @@ func (ctx *Context) quaryParser() {
 	for key, value := range req.Form {
 		ctx.Request.QueryParams[key] = value
 	}
+}
+
+// Execute parse template file.
+func (ctx *Context) Execute(label string, data interface{}) {
+	t, err := template.ParseFiles(ctx.HTMLtmpls[label]...)
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Execute(*ctx.Response.writer, data)
+}
+
+// AddTemplates templates files
+func (ctx *Context) AddTemplates(label string, files ...string) {
+	ctx.HTMLtmpls[label] = files
 }
