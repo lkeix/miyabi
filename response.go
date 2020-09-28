@@ -8,7 +8,7 @@ import (
 
 // Response is http response class.
 type Response struct {
-	writer    *http.ResponseWriter
+	Writer    *http.ResponseWriter
 	Status    int
 	Size      int64
 	Committed bool
@@ -16,11 +16,11 @@ type Response struct {
 
 // NewResponse create response instance.
 func NewResponse(w *http.ResponseWriter) *Response {
-	return &Response{writer: w}
+	return &Response{Writer: w}
 }
 
 func (resp *Response) reset() {
-	resp.writer = nil
+	resp.Writer = nil
 	resp.Size = -1
 	resp.Status = 200
 }
@@ -28,7 +28,7 @@ func (resp *Response) reset() {
 // WriteResponse write interface
 // response arge type is byte[], string, interface.
 func (resp *Response) WriteResponse(response interface{}) error {
-	w := *resp.writer
+	w := *resp.Writer
 	responseStr := ""
 	var err error
 	switch response.(type) {

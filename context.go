@@ -104,7 +104,7 @@ func (ctx *Context) Execute(label string, data interface{}) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.Execute(*ctx.Response.writer, data)
+	t.Execute(*ctx.Response.Writer, data)
 }
 
 // AddTemplates templates files
