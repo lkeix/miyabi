@@ -8,6 +8,10 @@ import (
 func main() {
 	myb := miyabi.New()
 	routing := miyabi.NewRouter()
+	g1 := routing.NewGroup("/group1")
+	g1.Apply(middleware1, middleware2)
+	g1.GET("/test1", test)
+	routing.AppendGroup(g1)
 	routing.GET("/", test)
 	routing.GET("/test1", test1)
 	routing.GET("/test2", test2)
@@ -16,6 +20,7 @@ func main() {
 	routing.GET("/repo/:user/:active", test5)
 	routing.GET("/fizz/:user/:active/:bool/:okok", test6)
 	routing.GET("/tmpl", test7)
+	routing.Apply(middleware3)
 	myb.Routing = routing
 	myb.Serve(":8000")
 }
@@ -58,4 +63,16 @@ func test7(ctx *miyabi.Context) {
 		"Title": "Hello!",
 		"test":  "test",
 	})
+}
+
+func middleware1(ctx *miyabi.Context) {
+	fmt.Println("called Middleware1")
+}
+
+func middleware2(ctx *miyabi.Context) {
+	fmt.Println("called Middleware2")
+}
+
+func middleware3(ctx *miyabi.Context)  {
+	fmt.Println("called Middleware3")
 }

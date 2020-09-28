@@ -6,9 +6,16 @@ import (
 )
 
 type (
+
+	tree struct {
+		body map[string]*Route
+	}
+
 	// Router control routing
 	Router struct {
-		tree map[string]*Route
+		Tree *tree
+		Groups []*Group
+		middlewares []*HandlerFunc
 	}
 
 	// PathParam record path parameter.
@@ -23,6 +30,13 @@ type (
 		children map[string]*Route
 		param    PathParam
 	}
+
+	// Group is sub-routing data structure
+	Group struct {
+		basePath string
+		middlewares []*HandlerFunc
+		Tree *tree
+	}
 )
 
 const (
@@ -33,7 +47,14 @@ const (
 // NewRouter create router instance.
 func NewRouter() *Router {
 	return &Router{
-		tree: map[string]*Route{
+		Tree: newTree(),
+	}
+}
+
+
+func newTree() *tree {
+	return &tree{
+		map[string]*Route{
 			http.MethodGet: {
 				handler:  nil,
 				children: make(map[string]*Route),
@@ -46,8 +67,30 @@ func NewRouter() *Router {
 	}
 }
 
-func (r *Router) search(method, path string) (*HandlerFunc, map[string]string) {
-	currentNode := r.tree[method]
+// NewGroup create group instance
+func (r *Router) NewGroup(group string) *Group {
+	return &Group{
+		basePath: group,
+		Tree: newTree(),
+	}
+}
+
+// Apply middleware handler on group
+func (r *Router) Apply(handlers ...HandlerFunc) {
+	for _, handler := range handlers {
+		r.middlewares = append(r.middlewares, &handler)
+	}
+}
+
+// Apply middleware handler on group
+func (g *Group) Apply(handlers ...HandlerFunc) {
+	for _, handler := range handlers {
+		g.middlewares = append(g.middlewares, &handler)
+	}
+}
+
+func (tr *tree) search(method, path string) (*HandlerFunc, map[string]string) {
+	currentNode := tr.body[method]
 	if path == separator {
 		return &currentNode.handler, nil
 	}
@@ -80,8 +123,8 @@ func (r *Router) search(method, path string) (*HandlerFunc, map[string]string) {
 	return nil, nil
 }
 
-func (r *Router) insert(method, path string, handler HandlerFunc) {
-	currentNode := r.tree[method]
+func (tr *tree) insert(method, path string, handler HandlerFunc) {
+	currentNode := tr.body[method]
 	if path == separator {
 		*currentNode = newRoute(handler, "")
 		return
@@ -123,6 +166,11 @@ func (r *Router) insert(method, path string, handler HandlerFunc) {
 	}
 }
 
+// AppendGroup append group for router groups
+func (r *Router) AppendGroup(group *Group) {
+	r.Groups = append(r.Groups, group)
+}
+
 func newRoute(handler HandlerFunc, key string) Route {
 	if key == "" {
 		return Route{
@@ -138,12 +186,38 @@ func newRoute(handler HandlerFunc, key string) Route {
 	return route
 }
 
+// RunMiddleware run middleware resisterd on router
+func (r *Router) RunMiddleware(ctx *Context) {
+	for _, middleware := range r.middlewares {
+		handler := *middleware
+		handler(ctx)
+	}
+}
+
+// RunMiddleware run middleware resisterd on group
+func (g *Group) RunMiddleware(ctx *Context) {
+	for _, middleware := range g.middlewares {
+		handler := *middleware
+		handler(ctx)
+	}
+}
+
 // GET set http handler on method GET
 func (r *Router) GET(path string, handler HandlerFunc) {
-	r.insert(http.MethodGet, path, handler)
+	r.Tree.insert(http.MethodGet, path, handler)
 }
 
 // POST set http handler on method POST
 func (r *Router) POST(path string, handler HandlerFunc) {
-	r.insert(http.MethodPost, path, handler)
+	r.Tree.insert(http.MethodPost, path, handler)
+}
+
+// GET set http handler on method GET in Group
+func (g *Group) GET(path string, handler HandlerFunc) {
+	g.Tree.insert(http.MethodGet, g.basePath + path, handler)
+}
+
+// POST set http handler on method POST in Group
+func (g *Group) POST(path string, handler HandlerFunc) {
+	g.Tree.insert(http.MethodPost, g.basePath + path, handler)
 }

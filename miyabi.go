@@ -41,17 +41,33 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = NewContext(&w, r)
 	method := ctx.Request.Base.Method
 	url := ctx.Request.Base.URL.Path
-	handler, params := myb.Routing.search(method, url)
+	route := myb.Routing
+	handler, params := route.Tree.search(method, url)
 	if handler != nil {
-		ctx.Handler = *handler
-		ctx.Request.PathParams = params
-		ctx.Parse()
-		ctx.Handler(&ctx)
+		route.RunMiddleware(&ctx)
+		execHandler(ctx, handler, params)
 		myb.pool.Put(ctx)
-	} else {
-		ctx.Handler = noRoute()
-		ctx.Handler(&ctx)
+		return
 	}
+	for i := 0;i < len(myb.Routing.Groups); i++ {
+		group := myb.Routing.Groups[i]
+		handler, params := group.Tree.search(method, url)
+		if handler != nil {
+			group.RunMiddleware(&ctx)
+			execHandler(ctx, handler, params)
+			myb.pool.Put(ctx)
+			return
+		}
+	}
+	ctx.Handler = noRoute()
+	ctx.Handler(&ctx)
+}
+
+func execHandler(ctx Context, handler *HandlerFunc, params map[string]string) {
+	ctx.Handler = *handler
+	ctx.Request.PathParams = params
+	ctx.Request.Parse()
+	ctx.Handler(&ctx)
 }
 
 func noRoute() HandlerFunc {
