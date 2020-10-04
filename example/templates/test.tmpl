@@ -3,9 +3,14 @@
     <title>test</title>
   </head>
   <body>
+    <script>
+    console.log(document.cookie)
+    console.log('aaaaaaa')
+    </script>
     <h1>
       {{.Title}}
     </h1>
     {{template "test1" .}}
+    {{.cnt}}
   </body>
 </html>

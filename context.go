@@ -2,7 +2,6 @@ package miyabi
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -12,6 +11,7 @@ type (
 		Response  *Response
 		Request   *RequestContent
 		Handler   HandlerFunc
+		aborted   bool
 		HTMLtmpls map[string][]string
 	}
 
@@ -25,6 +25,7 @@ func NewContext(w *http.ResponseWriter, r *http.Request) Context {
 	ctx.Response = NewResponse(w)
 	ctx.Request = NewRequest(r)
 	ctx.HTMLtmpls = make(map[string][]string)
+	ctx.aborted = false
 	return ctx
 }
 
@@ -32,7 +33,7 @@ func NewContext(w *http.ResponseWriter, r *http.Request) Context {
 func (ctx *Context) Execute(label string, data interface{}) {
 	t, err := template.ParseFiles(ctx.HTMLtmpls[label]...)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	t.Execute(*ctx.Response.Writer, data)
 }
@@ -40,4 +41,9 @@ func (ctx *Context) Execute(label string, data interface{}) {
 // AddTemplates mplates files
 func (ctx *Context) AddTemplates(label string, files ...string) {
 	ctx.HTMLtmpls[label] = files
+}
+
+// Abort abort process of request.
+func (ctx *Context) Abort() {
+	ctx.aborted = true
 }

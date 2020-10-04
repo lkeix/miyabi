@@ -6,16 +6,15 @@ import (
 )
 
 type (
-
 	tree struct {
 		body map[string]*Route
 	}
 
 	// Router control routing
 	Router struct {
-		Tree *tree
-		Groups []*Group
-		middlewares []*HandlerFunc
+		Tree        *tree
+		Groups      []*Group
+		middlewares []HandlerFunc
 	}
 
 	// PathParam record path parameter.
@@ -33,9 +32,9 @@ type (
 
 	// Group is sub-routing data structure
 	Group struct {
-		basePath string
-		middlewares []*HandlerFunc
-		Tree *tree
+		basePath    string
+		middlewares []HandlerFunc
+		Tree        *tree
 	}
 )
 
@@ -50,7 +49,6 @@ func NewRouter() *Router {
 		Tree: newTree(),
 	}
 }
-
 
 func newTree() *tree {
 	return &tree{
@@ -71,22 +69,18 @@ func newTree() *tree {
 func (r *Router) NewGroup(group string) *Group {
 	return &Group{
 		basePath: group,
-		Tree: newTree(),
+		Tree:     newTree(),
 	}
 }
 
 // Apply middleware handler on group
 func (r *Router) Apply(handlers ...HandlerFunc) {
-	for _, handler := range handlers {
-		r.middlewares = append(r.middlewares, &handler)
-	}
+	r.middlewares = handlers
 }
 
 // Apply middleware handler on group
 func (g *Group) Apply(handlers ...HandlerFunc) {
-	for _, handler := range handlers {
-		g.middlewares = append(g.middlewares, &handler)
-	}
+	g.middlewares = handlers
 }
 
 func (tr *tree) search(method, path string) (*HandlerFunc, map[string]string) {
@@ -189,7 +183,7 @@ func newRoute(handler HandlerFunc, key string) Route {
 // RunMiddleware run middleware resisterd on router
 func (r *Router) RunMiddleware(ctx *Context) {
 	for _, middleware := range r.middlewares {
-		handler := *middleware
+		handler := middleware
 		handler(ctx)
 	}
 }
@@ -197,7 +191,7 @@ func (r *Router) RunMiddleware(ctx *Context) {
 // RunMiddleware run middleware resisterd on group
 func (g *Group) RunMiddleware(ctx *Context) {
 	for _, middleware := range g.middlewares {
-		handler := *middleware
+		handler := middleware
 		handler(ctx)
 	}
 }
@@ -214,10 +208,10 @@ func (r *Router) POST(path string, handler HandlerFunc) {
 
 // GET set http handler on method GET in Group
 func (g *Group) GET(path string, handler HandlerFunc) {
-	g.Tree.insert(http.MethodGet, g.basePath + path, handler)
+	g.Tree.insert(http.MethodGet, g.basePath+path, handler)
 }
 
 // POST set http handler on method POST in Group
 func (g *Group) POST(path string, handler HandlerFunc) {
-	g.Tree.insert(http.MethodPost, g.basePath + path, handler)
+	g.Tree.insert(http.MethodPost, g.basePath+path, handler)
 }

@@ -1,7 +1,6 @@
 package miyabi
 
 import (
-	"html/template"
 	"net/http"
 	"sync"
 )
@@ -12,24 +11,15 @@ type (
 
 	// Miyabi is this web framework base class.
 	Miyabi struct {
-		FuncMap template.FuncMap
-		Routing *Router
-		pool    sync.Pool
-		Debug   bool
-		server  http.Server
+		Router *Router
+		pool   sync.Pool
+		server http.Server
 	}
 )
 
-// New create Miyabi instance, return it. if you want to use debug mode, you write true on arg.
-func New(debug ...bool) *Miyabi {
-	var doDebug bool
-	if len(debug) == 1 {
-		doDebug = debug[0]
-	}
-	myb := &Miyabi{
-		FuncMap: template.FuncMap{},
-		Debug:   doDebug,
-	}
+// New create Miyabi instance, return it.
+func New() *Miyabi {
+	myb := &Miyabi{}
 	myb.pool.New = func() interface{} {
 		return NewContext(nil, nil)
 	}
@@ -41,7 +31,7 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = NewContext(&w, r)
 	method := ctx.Request.Base.Method
 	url := ctx.Request.Base.URL.Path
-	route := myb.Routing
+	route := myb.Router
 	handler, params := route.Tree.search(method, url)
 	if handler != nil {
 		route.RunMiddleware(&ctx)
@@ -49,8 +39,8 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		myb.pool.Put(ctx)
 		return
 	}
-	for i := 0;i < len(myb.Routing.Groups); i++ {
-		group := myb.Routing.Groups[i]
+	for i := 0; i < len(myb.Router.Groups); i++ {
+		group := myb.Router.Groups[i]
 		handler, params := group.Tree.search(method, url)
 		if handler != nil {
 			group.RunMiddleware(&ctx)
