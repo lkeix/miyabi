@@ -18,7 +18,7 @@ type (
 		secretKey string
 		iv        []byte
 		sessions  []*Session
-		option    Options
+		options   *Options
 		block     cipher.Block
 	}
 
@@ -29,7 +29,9 @@ type (
 	}
 	// Options session options
 	Options struct {
-		MaxAge int64
+		HTTPOnly bool
+		SameSite http.SameSite
+		MaxAge   int
 	}
 )
 
@@ -50,6 +52,11 @@ func NewSessions() {
 	sessions.iv = ([]byte)(generateString(sessions.block.BlockSize()))
 }
 
+// SetOptions set options
+func SetOptions(opts *Options) {
+	sessions.options = opts
+}
+
 // Start start session, return session instance
 func Start(ctx *miyabi.Context) *Session {
 	if cookie, err := ctx.Request.Base.Cookie("sess"); err == nil {
@@ -60,9 +67,12 @@ func Start(ctx *miyabi.Context) *Session {
 	}
 	session := newSession(3)
 	cookie := &http.Cookie{
-		Name:   "sess",
-		Value:  sessions.encrypt(session.plane),
-		Secure: true,
+		Name:     "sess",
+		Value:    sessions.encrypt(session.plane),
+		Secure:   ctx.IsTSL,
+		SameSite: sessions.options.SameSite,
+		HttpOnly: sessions.options.HTTPOnly,
+		MaxAge:   sessions.options.MaxAge,
 	}
 	http.SetCookie(*ctx.Response.Writer, cookie)
 	sessions.sessions = append(sessions.sessions, session)

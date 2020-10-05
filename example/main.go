@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"miyabi"
 	"miyabi/sessions"
+	"net/http"
 	"strconv"
 )
 
@@ -11,6 +12,12 @@ func main() {
 	myb := miyabi.New()
 	router := miyabi.NewRouter()
 	sessions.NewSessions()
+	options := &sessions.Options{
+		MaxAge:   60,
+		HTTPOnly: false,
+		SameSite: http.SameSiteStrictMode,
+	}
+	sessions.SetOptions(options)
 	g1 := router.NewGroup("/group1")
 	g1.Apply(middleware1, middleware2)
 	g1.GET("/test1", test)
@@ -32,11 +39,6 @@ func test(ctx *miyabi.Context) {
 	fmt.Println("hello")
 	ctx.Response.WriteResponse("hello")
 	sessions.Start(ctx)
-}
-
-func sessionTst(sess *sessions.Sessions) miyabi.HandlerFunc {
-	return func(ctx *miyabi.Context) {
-	}
 }
 
 func test1(ctx *miyabi.Context) {

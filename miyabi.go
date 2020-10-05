@@ -14,6 +14,7 @@ type (
 		Router *Router
 		pool   sync.Pool
 		server http.Server
+		isTLS  bool
 	}
 )
 
@@ -29,6 +30,7 @@ func New() *Miyabi {
 func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := myb.pool.Get().(Context)
 	ctx = NewContext(&w, r)
+	ctx.IsTSL = myb.isTLS
 	method := ctx.Request.Base.Method
 	url := ctx.Request.Base.URL.Path
 	route := myb.Router
@@ -72,4 +74,13 @@ func (myb *Miyabi) Serve(port string) {
 	s.Handler = myb
 	s.Addr = port
 	s.ListenAndServe()
+}
+
+// ServeTLS start https server need cert, key file path
+func (myb *Miyabi) ServeTLS(port, cert, key string) {
+	var s http.Server
+	s.Handler = myb
+	s.Addr = port
+	myb.isTLS = true
+	s.ListenAndServeTLS(cert, key)
 }

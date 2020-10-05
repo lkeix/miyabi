@@ -13,6 +13,7 @@ type (
 		Handler   HandlerFunc
 		aborted   bool
 		HTMLtmpls map[string][]string
+		IsTSL     bool
 	}
 
 	// Templates tmpl files ma
