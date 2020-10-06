@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"miyabi"
 	"net/http"
@@ -26,7 +27,9 @@ type (
 	Session struct {
 		lake  map[string]interface{}
 		plane []byte
+		last  time.Time
 	}
+
 	// Options session options
 	Options struct {
 		HTTPOnly bool
@@ -83,6 +86,7 @@ func newSession(length int) *Session {
 	session := &Session{
 		plane: make([]byte, length*16),
 		lake:  make(map[string]interface{}),
+		last:  time.Now(),
 	}
 	session.plane = generateString(length * 16)
 	for i := sessions.evaluateSessions(session.plane); i >= 0; {
@@ -159,4 +163,16 @@ func generateString(length int) []byte {
 		result += string(base[rand.Intn(len(base))])
 	}
 	return ([]byte)(result)
+}
+
+func destroyOldSession() {
+	for i := 0; i < len(sessions.sessions); i++ {
+		now := time.Now()
+		d := now.Sub(sessions.sessions[i].last)
+		dif := int(d.Hours())*60*60 + int(d.Minutes())*60 + int(d.Seconds())
+		fmt.Println(dif)
+		if dif > sessions.options.MaxAge {
+			sessions.sessions = append(sessions.sessions[:i], sessions.sessions[i+1:]...)
+		}
+	}
 }
