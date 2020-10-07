@@ -39,6 +39,7 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		route.RunMiddleware(&ctx)
 		execHandler(ctx, handler, params)
 		myb.pool.Put(ctx)
+		requestLog(url, method, 200)
 		return
 	}
 	for i := 0; i < len(myb.Router.Groups); i++ {
@@ -48,10 +49,12 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			group.RunMiddleware(&ctx)
 			execHandler(ctx, handler, params)
 			myb.pool.Put(ctx)
+			requestLog(url, method, 200)
 			return
 		}
 	}
 	ctx.Handler = noRoute()
+	requestLog(url, method, 404)
 	ctx.Handler(&ctx)
 }
 
@@ -73,6 +76,7 @@ func (myb *Miyabi) Serve(port string) {
 	var s http.Server
 	s.Handler = myb
 	s.Addr = port
+	routerLog(myb)
 	s.ListenAndServe()
 }
 
@@ -82,5 +86,6 @@ func (myb *Miyabi) ServeTLS(port, cert, key string) {
 	s.Handler = myb
 	s.Addr = port
 	myb.isTLS = true
+	routerLog(myb)
 	s.ListenAndServeTLS(cert, key)
 }

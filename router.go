@@ -15,6 +15,7 @@ type (
 		Tree        *tree
 		Groups      []*Group
 		middlewares []HandlerFunc
+		RouterInfo  []*Info
 	}
 
 	// PathParam record path parameter.
@@ -35,6 +36,13 @@ type (
 		basePath    string
 		middlewares []HandlerFunc
 		Tree        *tree
+		GroupInfo   []*Info
+	}
+
+	// Info is route info, used setup log.
+	Info struct {
+		path   string
+		method string
 	}
 )
 
@@ -199,19 +207,23 @@ func (g *Group) RunMiddleware(ctx *Context) {
 // GET set http handler on method GET
 func (r *Router) GET(path string, handler HandlerFunc) {
 	r.Tree.insert(http.MethodGet, path, handler)
+	r.RouterInfo = append(r.RouterInfo, &Info{path: path, method: http.MethodGet})
 }
 
 // POST set http handler on method POST
 func (r *Router) POST(path string, handler HandlerFunc) {
 	r.Tree.insert(http.MethodPost, path, handler)
+	r.RouterInfo = append(r.RouterInfo, &Info{path: path, method: http.MethodPost})
 }
 
 // GET set http handler on method GET in Group
 func (g *Group) GET(path string, handler HandlerFunc) {
 	g.Tree.insert(http.MethodGet, g.basePath+path, handler)
+	g.GroupInfo = append(g.GroupInfo, &Info{path: path, method: http.MethodGet})
 }
 
 // POST set http handler on method POST in Group
 func (g *Group) POST(path string, handler HandlerFunc) {
 	g.Tree.insert(http.MethodPost, g.basePath+path, handler)
+	g.GroupInfo = append(g.GroupInfo, &Info{path: path, method: http.MethodPost})
 }
