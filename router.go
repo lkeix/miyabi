@@ -101,9 +101,9 @@ func (tr *tree) search(method, path string) (*HandlerFunc, map[string]string) {
 	for _, separatedStr := range strings.Split(path, separator) {
 		for charIdx := 0; charIdx < len(separatedStr); charIdx++ {
 			nextNode, exist := currentNode.children[string(separatedStr[charIdx])]
-			comparePath += string(separatedStr[charIdx])
+			comparePath = strings.Join([]string{comparePath, string(separatedStr[charIdx])}, "")
 			if exist {
-				if comparePath == path && nextNode.handler != nil {
+				if string(comparePath) == path && nextNode.handler != nil {
 					return &nextNode.handler, params
 				}
 				currentNode = nextNode
@@ -111,18 +111,26 @@ func (tr *tree) search(method, path string) (*HandlerFunc, map[string]string) {
 			}
 			// children have path parameter delimiter coron
 			if nextNode, exist := currentNode.children[coron]; exist {
-				comparePath = comparePath[0:len(comparePath)-1] + separatedStr
+				comparePath = strings.Join([]string{comparePath[0:max(0, len(comparePath)-1)], string(separatedStr)}, "")
 				params[nextNode.param.key] = separatedStr
 				charIdx = len(separatedStr) - 1
-				if comparePath == path && nextNode.handler != nil {
+				if string(comparePath) == path && nextNode.handler != nil {
 					return &nextNode.handler, params
 				}
 				currentNode = nextNode
 			}
 		}
-		comparePath += separator
+		comparePath = strings.Join([]string{comparePath, separator}, "")
 	}
 	return nil, nil
+}
+
+func joinByte(base []byte, target byte) []byte {
+	return append(base, target)
+}
+
+func joinBytes(base []byte, targets []byte) []byte {
+	return append(base, targets...)
 }
 
 func (tr *tree) insert(method, path string, handler HandlerFunc) {
@@ -135,14 +143,14 @@ func (tr *tree) insert(method, path string, handler HandlerFunc) {
 	for _, separatedStr := range strings.Split(path, separator) {
 		for charIdx := 0; charIdx < len(separatedStr); charIdx++ {
 			nextNode, exist := currentNode.children[string(separatedStr[charIdx])]
-			comparePath += string(separatedStr[charIdx])
+			comparePath = strings.Join([]string{comparePath, string(separatedStr[charIdx])}, "")
 			// pathparameter
 			if string(separatedStr[0]) == coron {
-				charIdx = len(separatedStr) - 1
-				route := newRoute(nil, separatedStr[1:charIdx+1])
+				charIdx = len(separatedStr)
+				route := newRoute(nil, separatedStr[1:charIdx])
 				currentNode.children[coron] = &route
 				currentNode = currentNode.children[coron]
-				comparePath += separatedStr[1 : charIdx+1]
+				comparePath = strings.Join([]string{comparePath, separatedStr[1:charIdx]}, "")
 				if comparePath == path {
 					currentNode.handler = handler
 					return
@@ -154,7 +162,7 @@ func (tr *tree) insert(method, path string, handler HandlerFunc) {
 				continue
 			}
 			// target path
-			if comparePath == path && string(separatedStr[0]) != coron {
+			if string(comparePath) == path && string(separatedStr[0]) != coron {
 				route := newRoute(handler, "")
 				currentNode.children[string(separatedStr[charIdx])] = &route
 				return
@@ -164,7 +172,7 @@ func (tr *tree) insert(method, path string, handler HandlerFunc) {
 			currentNode.children[string(separatedStr[charIdx])] = &route
 			currentNode = currentNode.children[string(separatedStr[charIdx])]
 		}
-		comparePath += separator
+		comparePath = strings.Join([]string{comparePath, separator}, "")
 	}
 }
 
@@ -226,4 +234,11 @@ func (g *Group) GET(path string, handler HandlerFunc) {
 func (g *Group) POST(path string, handler HandlerFunc) {
 	g.Tree.insert(http.MethodPost, g.basePath+path, handler)
 	g.GroupInfo = append(g.GroupInfo, &Info{path: path, method: http.MethodPost})
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

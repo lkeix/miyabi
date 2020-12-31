@@ -20,8 +20,8 @@ type (
 // NewRequest create RequestContent instance
 func NewRequest(r *http.Request) *RequestContent {
 	return &RequestContent{
-		Base: r,
-		PathParams: make(map[string]string),
+		Base:        r,
+		PathParams:  make(map[string]string),
 		QueryParams: make(map[string][]string),
 	}
 }
@@ -45,7 +45,7 @@ func (req *RequestContent) Parse() {
 		req.imageParser()
 		return
 	}
-	if strings.HasPrefix(contentType, "multipart/fo-data") {
+	if strings.HasPrefix(contentType, "multipart/form-data") {
 		req.fileParser()
 	}
 	req.quaryParser()
