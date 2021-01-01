@@ -1,8 +1,10 @@
 package miyabi
 
 import (
+	"net"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type (
@@ -11,12 +13,15 @@ type (
 
 	// Miyabi is this web framework base class.
 	Miyabi struct {
-		Router *Router
-		pool   sync.Pool
-		server http.Server
-		isTLS  bool
+		Router    *Router
+		pool      sync.Pool
+		server    http.Server
+		isTLS     bool
+		Timestamp map[string]time.Time
 	}
 )
+
+const logBuffer = 1.0
 
 // New create Miyabi instance, return it.
 func New() *Miyabi {
@@ -26,6 +31,7 @@ func New() *Miyabi {
 		var r *http.Request
 		return NewContext(&w, r)
 	}
+	myb.Timestamp = make(map[string]time.Time)
 	return myb
 }
 
@@ -38,11 +44,21 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	url := ctx.Request.Base.URL.Path
 	route := myb.Router
 	handler, params := route.Tree.search(method, url)
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	outlog := false
+	now := time.Now()
+	last, exist := myb.Timestamp[ip]
+	if !exist || now.Sub(last).Seconds() >= logBuffer {
+		myb.Timestamp[ip] = now
+		outlog = true
+	}
 	if handler != nil {
 		route.RunMiddleware(&ctx)
 		execHandler(ctx, handler, params)
 		myb.pool.Put(ctx)
-		// requestLog(url, method, 200)
+		if outlog {
+			requestLog(url, method, 200)
+		}
 		return
 	}
 	for i := 0; i < len(myb.Router.Groups); i++ {
@@ -52,12 +68,16 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			group.RunMiddleware(&ctx)
 			execHandler(ctx, handler, params)
 			myb.pool.Put(ctx)
-			// requestLog(url, method, 200)
+			if outlog {
+				requestLog(url, method, 200)
+			}
 			return
 		}
 	}
+	if outlog {
+		requestLog(url, method, 404)
+	}
 	ctx.Handler = noRoute()
-	// requestLog(url, method, 404)
 	ctx.Handler(&ctx)
 }
 
