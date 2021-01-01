@@ -22,14 +22,17 @@ type (
 func New() *Miyabi {
 	myb := &Miyabi{}
 	myb.pool.New = func() interface{} {
-		return NewContext(nil, nil)
+		var w http.ResponseWriter
+		var r *http.Request
+		return NewContext(&w, r)
 	}
 	return myb
 }
 
 func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := myb.pool.Get().(Context)
-	ctx = NewContext(&w, r)
+	ctx.Request.Base = r
+	ctx.Response.Writer = &w
 	ctx.IsTSL = myb.isTLS
 	method := ctx.Request.Base.Method
 	url := ctx.Request.Base.URL.Path
@@ -39,7 +42,7 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		route.RunMiddleware(&ctx)
 		execHandler(ctx, handler, params)
 		myb.pool.Put(ctx)
-		requestLog(url, method, 200)
+		// requestLog(url, method, 200)
 		return
 	}
 	for i := 0; i < len(myb.Router.Groups); i++ {
@@ -49,12 +52,12 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			group.RunMiddleware(&ctx)
 			execHandler(ctx, handler, params)
 			myb.pool.Put(ctx)
-			requestLog(url, method, 200)
+			// requestLog(url, method, 200)
 			return
 		}
 	}
 	ctx.Handler = noRoute()
-	requestLog(url, method, 404)
+	// requestLog(url, method, 404)
 	ctx.Handler(&ctx)
 }
 
