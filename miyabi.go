@@ -36,10 +36,10 @@ func New() *Miyabi {
 }
 
 func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := myb.pool.Get().(Context)
+	ctx := myb.pool.Get().(*Context)
+	ctx.IsTSL = myb.isTLS
 	ctx.Request.Base = r
 	ctx.Response.Writer = &w
-	ctx.IsTSL = myb.isTLS
 	method := ctx.Request.Base.Method
 	url := ctx.Request.Base.URL.Path
 	route := myb.Router
@@ -53,7 +53,7 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		outlog = true
 	}
 	if handler != nil {
-		route.RunMiddleware(&ctx)
+		route.RunMiddleware(ctx)
 		execHandler(ctx, handler, params)
 		myb.pool.Put(ctx)
 		if outlog {
@@ -61,16 +61,16 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	for i := 0; i < len(myb.Router.Groups); i++ {
+	for i := 0; i < len(route.Groups); i++ {
 		group := myb.Router.Groups[i]
 		handler, params := group.Tree.search(method, url)
 		if handler != nil {
-			group.RunMiddleware(&ctx)
+			group.RunMiddleware(ctx)
 			execHandler(ctx, handler, params)
-			myb.pool.Put(ctx)
 			if outlog {
 				requestLog(url, method, 200)
 			}
+			myb.pool.Put(ctx)
 			return
 		}
 	}
@@ -78,14 +78,13 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		requestLog(url, method, 404)
 	}
 	ctx.Handler = noRoute()
-	ctx.Handler(&ctx)
+	ctx.Handler(ctx)
 }
 
-func execHandler(ctx Context, handler *HandlerFunc, params map[string]string) {
+func execHandler(ctx *Context, handler *HandlerFunc, params map[string]string) {
 	ctx.Handler = *handler
 	ctx.Request.PathParams = params
-	ctx.Request.Parse()
-	ctx.Handler(&ctx)
+	ctx.Handler(ctx)
 }
 
 func noRoute() HandlerFunc {

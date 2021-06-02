@@ -51,21 +51,29 @@ func test2(ctx *miyabi.Context) {
 }
 
 func test3(ctx *miyabi.Context) {
-	fmt.Println(ctx.Request.Data)
+	req := ctx.Request
+	req.Parse()
+	fmt.Println(req.Data)
+	ctx.Response.WriteResponse("test3 called")
 }
 
 func test4(ctx *miyabi.Context) {
-	fmt.Println(ctx.Request.PathParams)
-	ctx.Response.WriteResponse(ctx.Request.PathParams)
+	req := ctx.Request
+	req.Parse()
+	ctx.Response.WriteResponse(req.PathParams)
 }
 
 func test5(ctx *miyabi.Context) {
-	ctx.Response.WriteResponse(ctx.Request.PathParams)
+	req := ctx.Request
+	req.Parse()
+	ctx.Response.WriteResponse(req.PathParams)
 }
 
 func test6(ctx *miyabi.Context) {
-	fmt.Println(ctx.Request.QueryParams["page"])
-	ctx.Response.WriteResponse(ctx.Request.PathParams)
+	req := ctx.Request
+	req.Parse()
+	fmt.Println(req.QueryParams["page"])
+	ctx.Response.WriteResponse(req.PathParams)
 }
 
 func test7(ctx *miyabi.Context) {
