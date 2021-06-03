@@ -72,7 +72,7 @@ func test5(ctx *miyabi.Context) {
 func test6(ctx *miyabi.Context) {
 	req := ctx.Request
 	req.Parse()
-	fmt.Println(req.QueryParams["page"])
+	fmt.Println(req.GetQueryParam("page"))
 	ctx.Response.WriteResponse(req.PathParams)
 }
 

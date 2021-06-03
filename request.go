@@ -13,7 +13,7 @@ type (
 		Base        *http.Request
 		Data        interface{}
 		PathParams  []Param
-		QueryParams map[string][]string
+		QueryParams []Param
 	}
 )
 
@@ -22,7 +22,7 @@ func NewRequest(r *http.Request) *RequestContent {
 	return &RequestContent{
 		Base:        r,
 		PathParams:  []Param{},
-		QueryParams: make(map[string][]string),
+		QueryParams: []Param{},
 	}
 }
 
@@ -80,12 +80,24 @@ func (req *RequestContent) quaryParser() {
 	r := req.Base
 	r.ParseForm()
 	for key, value := range r.Form {
-		req.QueryParams[key] = value
+		req.QueryParams = append(req.QueryParams, Param{
+			Key: key,
+			Val: strings.Join(value, "="),
+		})
 	}
 }
 
 func (req *RequestContent) GetPathParam(key string) string {
 	for _, val := range req.PathParams {
+		if key == val.Key {
+			return val.Val
+		}
+	}
+	return ""
+}
+
+func (req *RequestContent) GetQueryParam(key string) string {
+	for _, val := range req.QueryParams {
 		if key == val.Key {
 			return val.Val
 		}
