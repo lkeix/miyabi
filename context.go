@@ -21,13 +21,13 @@ type (
 )
 
 // NewContext create Context instance.
-func NewContext(w *http.ResponseWriter, r *http.Request) Context {
+func NewContext(w *http.ResponseWriter, r *http.Request) *Context {
 	var ctx Context
 	ctx.Response = NewResponse(w)
 	ctx.Request = NewRequest(r)
 	ctx.HTMLtmpls = make(map[string][]string)
 	ctx.aborted = false
-	return ctx
+	return &ctx
 }
 
 // Execute parseemplate file.

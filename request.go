@@ -12,17 +12,17 @@ type (
 	RequestContent struct {
 		Base        *http.Request
 		Data        interface{}
-		PathParams  map[string]string
-		QueryParams map[string][]string
+		PathParams  []Param
+		QueryParams []Param
 	}
 )
 
 // NewRequest create RequestContent instance
 func NewRequest(r *http.Request) *RequestContent {
 	return &RequestContent{
-		Base: r,
-		PathParams: make(map[string]string),
-		QueryParams: make(map[string][]string),
+		Base:        r,
+		PathParams:  []Param{},
+		QueryParams: []Param{},
 	}
 }
 
@@ -45,7 +45,7 @@ func (req *RequestContent) Parse() {
 		req.imageParser()
 		return
 	}
-	if strings.HasPrefix(contentType, "multipart/fo-data") {
+	if strings.HasPrefix(contentType, "multipart/form-data") {
 		req.fileParser()
 	}
 	req.quaryParser()
@@ -80,6 +80,27 @@ func (req *RequestContent) quaryParser() {
 	r := req.Base
 	r.ParseForm()
 	for key, value := range r.Form {
-		req.QueryParams[key] = value
+		req.QueryParams = append(req.QueryParams, Param{
+			Key: key,
+			Val: strings.Join(value, "="),
+		})
 	}
+}
+
+func (req *RequestContent) GetPathParam(key string) string {
+	for _, val := range req.PathParams {
+		if key == val.Key {
+			return val.Val
+		}
+	}
+	return ""
+}
+
+func (req *RequestContent) GetQueryParam(key string) string {
+	for _, val := range req.QueryParams {
+		if key == val.Key {
+			return val.Val
+		}
+	}
+	return ""
 }
