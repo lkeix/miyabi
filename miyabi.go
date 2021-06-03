@@ -81,7 +81,7 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx.Handler(ctx)
 }
 
-func execHandler(ctx *Context, handler *HandlerFunc, params map[string]string) {
+func execHandler(ctx *Context, handler *HandlerFunc, params []Param) {
 	ctx.Handler = *handler
 	ctx.Request.PathParams = params
 	ctx.Handler(ctx)

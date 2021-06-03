@@ -12,7 +12,7 @@ type (
 	RequestContent struct {
 		Base        *http.Request
 		Data        interface{}
-		PathParams  map[string]string
+		PathParams  []Param
 		QueryParams map[string][]string
 	}
 )
@@ -21,7 +21,7 @@ type (
 func NewRequest(r *http.Request) *RequestContent {
 	return &RequestContent{
 		Base:        r,
-		PathParams:  make(map[string]string),
+		PathParams:  []Param{},
 		QueryParams: make(map[string][]string),
 	}
 }

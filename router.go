@@ -44,6 +44,11 @@ type (
 		path   string
 		method string
 	}
+
+	Param struct {
+		Key string
+		Val string
+	}
 )
 
 const (
@@ -91,13 +96,13 @@ func (g *Group) Apply(handlers ...HandlerFunc) {
 	g.middlewares = handlers
 }
 
-func (tr *tree) search(method, path string) (*HandlerFunc, map[string]string) {
+func (tr *tree) search(method, path string) (*HandlerFunc, []Param) {
 	currentNode := tr.body[method]
 	if path == separator {
 		return &currentNode.handler, nil
 	}
 	comparePath := ""
-	params := make(map[string]string)
+	params := []Param{}
 	for _, separatedStr := range strings.Split(path, separator) {
 		for charIdx := 0; charIdx < len(separatedStr); charIdx++ {
 			nextNode, exist := currentNode.children[string(separatedStr[charIdx])]
@@ -112,7 +117,10 @@ func (tr *tree) search(method, path string) (*HandlerFunc, map[string]string) {
 			// children have path parameter delimiter coron
 			if nextNode, exist := currentNode.children[coron]; exist {
 				comparePath = strings.Join([]string{comparePath[0:max(0, len(comparePath)-1)], string(separatedStr)}, "")
-				params[nextNode.param.key] = separatedStr
+				var param Param
+				param.Key = nextNode.param.key
+				param.Val = separatedStr
+				params = append(params, param)
 				charIdx = len(separatedStr) - 1
 				if string(comparePath) == path && nextNode.handler != nil {
 					return &nextNode.handler, params
