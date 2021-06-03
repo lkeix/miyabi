@@ -83,3 +83,12 @@ func (req *RequestContent) quaryParser() {
 		req.QueryParams[key] = value
 	}
 }
+
+func (req *RequestContent) GetPathParam(key string) string {
+	for _, val := range req.PathParams {
+		if key == val.Key {
+			return val.Val
+		}
+	}
+	return ""
+}
