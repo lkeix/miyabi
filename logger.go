@@ -13,6 +13,7 @@ func requestLog(path, method string, status int64) {
 	fmt.Fprint(out, logStr)
 }
 
+/*
 func routerLog(myb *Miyabi) {
 	out := os.Stdout
 	logStr := "\n"
@@ -30,3 +31,4 @@ func routerLog(myb *Miyabi) {
 	}
 	fmt.Fprint(out, logStr)
 }
+*/

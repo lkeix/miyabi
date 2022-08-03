@@ -1,3 +1,3 @@
-module miyabi
+module github.com/lkeix/miyabi
 
-go 1.14
+go 1.16

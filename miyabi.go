@@ -81,6 +81,11 @@ func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx.Handler(ctx)
 }
 
+/*
+func (myb *Miyabi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+}
+*/
+
 func execHandler(ctx *Context, handler *HandlerFunc, params []Param) {
 	ctx.Handler = *handler
 	ctx.Request.PathParams = params
@@ -98,7 +103,7 @@ func (myb *Miyabi) Serve(port string) {
 	var s http.Server
 	s.Handler = myb
 	s.Addr = port
-	routerLog(myb)
+	// routerLog(myb)
 	s.ListenAndServe()
 }
 
@@ -108,6 +113,6 @@ func (myb *Miyabi) ServeTLS(port, cert, key string) {
 	s.Handler = myb
 	s.Addr = port
 	myb.isTLS = true
-	routerLog(myb)
+	// routerLog(myb)
 	s.ListenAndServeTLS(cert, key)
 }
